@@ -179,14 +179,13 @@ check_root
 
 while true; do
     sleep 1.5
-    echo "Select an option:"
-    echo -e "\e[0;31m Would echo in dark red"
-    echo "1. Install HAProxy"
-    echo "2. Add IPs and Ports to Forward"
-    echo "3. Clear Configurations"
-    echo "4. Remove HAProxy Completely"
+    echo -e "${Purple}Select an option:${NC}"
+    echo -e "1. Install HAProxy"
+    echo -e "2. Add IPs and Ports to Forward"
+    echo -e "3. Clear Configurations"
+    echo -e "4. Remove HAProxy Completely"
     echo "9. Exit"
-    read -p "Select a Number : " choice
+    echo -e -p "Select a Number : " choice
 
     case $choice in
         1)
