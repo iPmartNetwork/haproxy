@@ -22,9 +22,11 @@ White='\033[0;96m'        # White
 echo "
 ____________________________________________________________________________________
 
-    echo -e "${Cyan}Server Country:${Purple} $SERVER_COUNTRY"
-    echo -e "${Cyan}Server IP:${Purple} $SERVER_IP"
-    echo -e "${Cyan}Server ISP:${Purple} $SERVER_ISP"
+      SERVER_IP=$(hostname -I | awk '{print $1}')
+
+      SERVER_COUNTRY=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.country')
+
+      SERVER_ISP=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.isp')
 ____________________________________________________________________________________                                                                                     
 "
 config_file="/etc/haproxy/haproxy.cfg"
