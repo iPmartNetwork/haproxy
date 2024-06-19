@@ -45,9 +45,9 @@ defaults
     mode    tcp
     option  tcplog
     option  dontlognull
-    timeout connect 5000s
-    timeout client  50000s
-    timeout server  50000s
+    timeout connect 5000ms
+    timeout client  50000ms
+    timeout server  50000ms
     errorfile 400 /etc/haproxy/errors/400.http
     errorfile 403 /etc/haproxy/errors/403.http
     errorfile 408 /etc/haproxy/errors/408.http
