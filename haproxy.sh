@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo -e "
+echo -e ${Purple}"
 __________________________________________________________________________________
         ____                             _     _                                     
     ,   /    )                           /|   /                                  /   
@@ -19,30 +19,12 @@ Cyan='\033[0;36m'         # Cyan
 NC='\033[0m'              # NC
 White='\033[0;96m'        # White
 
-install_jq() {
-    if ! command -v jq &> /dev/null; then
-        # Check if the system is using apt package manager
-        if command -v apt-get &> /dev/null; then
-            echo -e "${Purple}jq is not installed. Installing...${NC}"
-            sleep 1
-            sudo apt-get update
-            sudo apt-get install -y jq
-        else
-            echo -e "${Purple}Error: Unsupported package manager. Please install jq manually.${NC}\n"
-            read -p "Press any key to continue..."
-            exit 1
-        fi
-    fi
-
 echo "
 ____________________________________________________________________________________
 
-SERVER IP=$(hostname -I | awk '{print $1}')
-
-SERVER COUNTRY=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.country')
-
-SERVER ISP=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.isp')
-
+    echo -e "${Cyan}Server Country:${Purple} $SERVER_COUNTRY"
+    echo -e "${Cyan}Server IP:${Purple} $SERVER_IP"
+    echo -e "${Cyan}Server ISP:${Purple} $SERVER_ISP"
 ____________________________________________________________________________________                                                                                     
 "
 config_file="/etc/haproxy/haproxy.cfg"
@@ -56,7 +38,7 @@ check_root() {
 }
 
 install_haproxy() {
-     echo -e "${Cyan}Installing HAProxy...${NC}"
+    echo -e "${Cyan}Installing HAProxy...${NC}"
     sudo apt-get update
     sudo apt-get install -y haproxy
     echo -e "${Cyan}HAProxy installed.${NC}"
