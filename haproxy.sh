@@ -38,7 +38,7 @@ check_root() {
 }
 
 install_haproxy() {
-    echo -e "${Cyan}Installing HAProxy...${NC}"
+     echo -e "${Cyan}Installing HAProxy...${NC}"
     sudo apt-get update
     sudo apt-get install -y haproxy
     echo -e "${Cyan}HAProxy installed.${NC}"
