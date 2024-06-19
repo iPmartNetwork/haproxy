@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo -e ${Purple}"
-____________________________________________________________________________________
+__________________________________________________________________________________
         ____                             _     _                                     
     ,   /    )                           /|   /                                  /   
 -------/____/---_--_----__---)__--_/_---/-| -/-----__--_/_-----------__---)__---/-__-
@@ -41,10 +41,10 @@ check_root() {
 }
 
 install_haproxy() {
-    echo "Installing HAProxy..."
+     echo -e "${Cyan}Installing HAProxy...${NC}"
     sudo apt-get update
     sudo apt-get install -y haproxy
-    echo "HAProxy installed."
+    echo -e "${Cyan}HAProxy installed.${NC}"
     default_config
 }
 
@@ -156,23 +156,23 @@ clear_configs() {
 
     echo "Clearing IP and port configurations from $config_file."
     
-    echo "Stopping HAProxy service..."
+    echo -e "${Purple}Stopping HAProxy service...${NC}"
     sudo service haproxy stop
     
     if [ $? -eq 0 ]; then
-        echo "HAProxy service stopped."
+        echo -e "${Purple}HAProxy service stopped.${NC}"
     else
-        echo "Failed to stop HAProxy service."
+        echo -e "${Purple}Failed to stop HAProxy service.${NC}"
     fi
 
     echo "Done!"
 }
 
 remove_haproxy() {
-    echo "Removing HAProxy..."
+    echo -e "${Purple}Removing HAProxy...${NC}"
     sudo apt-get remove --purge -y haproxy
     sudo apt-get autoremove -y
-    echo "HAProxy removed."
+    echo -e "${Purple}HAProxy removed.${NC}"
 }
 
 check_root
@@ -180,12 +180,12 @@ check_root
 while true; do
     sleep 1.5
     echo -e "${Purple}Select an option:${NC}"
-    echo -e "1. Install HAProxy"
-    echo -e "2. Add IPs and Ports to Forward"
-    echo -e "3. Clear Configurations"
-    echo -e "4. Remove HAProxy Completely"
-    echo "9. Exit"
-    echo -e -p "Select a Number : " choice
+    echo -e "${White}1. Install HAProxy${NC}"
+    echo -e "${Cyan}2. Add IPs and Ports to Forward${NC}"
+    echo -e "${White}3. Clear Configurations${NC}"
+    echo -e "${Cyan}4. Remove HAProxy Completely${NC}"
+    echo -e "${White}5. Exit${NC}"
+    read -p "Select a Number : " choice
 
     case $choice in
         1)
@@ -200,7 +200,7 @@ while true; do
         4)
             remove_haproxy
             ;;
-        9)
+        5)
             echo "Exiting..."
             break
             ;;
