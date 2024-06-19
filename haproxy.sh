@@ -19,6 +19,14 @@ Cyan='\033[0;36m'         # Cyan
 NC='\033[0m'              # NC
 White='\033[0;96m'        # White
 
+     ENTRY="185.199.108.133 raw.githubusercontent.com"
+    if ! grep -q "$ENTRY" /etc/hosts; then
+	echo "Github Entry not found. Adding to /etc/hosts..."
+        echo "$ENTRY" >> /etc/hosts
+    else
+    echo "Github entry already exists in /etc/hosts."
+    fi
+
 echo "
 ____________________________________________________________________________________
 
