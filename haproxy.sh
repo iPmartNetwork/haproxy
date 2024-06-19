@@ -179,8 +179,8 @@ check_root
 
 while true; do
     sleep 1.5
-    echo "\033[0;36mSelect an option:"
-    echo "${RED}Error:${RESET} Something went wrong."
+    echo "Select an option:"
+    echo -e "\e[0;31m Would echo in dark red"
     echo "1. Install HAProxy"
     echo "2. Add IPs and Ports to Forward"
     echo "3. Clear Configurations"
