@@ -16,16 +16,17 @@ Yellow='\033[0;33m'       # Yellow
 Blue='\033[0;34m'         # Blue
 Purple='\033[0;35m'       # Purple
 Cyan='\033[0;36m'         # Cyan
-White='\033[0;37m'        # White
+NC='\033[0m'              # NC
+White='\033[0;96m'        # White
 
 echo "
 ____________________________________________________________________________________
 
-SERVER_IP=$(hostname -I | awk '{print $1}')
+SERVER IP=$(hostname -I | awk '{print $1}')
 
-SERVER_COUNTRY=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.country')
+SERVER COUNTRY=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.country')
 
-SERVER_ISP=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.isp')
+SERVER ISP=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.isp')
 
 ____________________________________________________________________________________                                                                                     
 "
@@ -178,7 +179,7 @@ check_root
 
 while true; do
     sleep 1.5
-    echo "${Cyan}Select an option:"
+    echo "${Cyan}Select an option:${NC}"
     echo "1. Install HAProxy"
     echo "2. Add IPs and Ports to Forward"
     echo "3. Clear Configurations"
