@@ -40,10 +40,10 @@ check_root() {
 }
 
 install_haproxy() {
-     echo -e "${Cyan}Installing HAProxy...${NC}"
+    echo "Installing HAProxy..."
     sudo apt-get update
     sudo apt-get install -y haproxy
-    echo -e "${Cyan}HAProxy installed.${NC}"
+    echo "HAProxy installed."
     default_config
 }
 
@@ -74,9 +74,9 @@ defaults
     mode    tcp
     option  tcplog
     option  dontlognull
-    timeout connect 5000ms
-    timeout client  50000ms
-    timeout server  50000ms
+    timeout connect 5000
+    timeout client  50000
+    timeout server  50000
     errorfile 400 /etc/haproxy/errors/400.http
     errorfile 403 /etc/haproxy/errors/403.http
     errorfile 408 /etc/haproxy/errors/408.http
@@ -155,18 +155,17 @@ clear_configs() {
 
     echo "Clearing IP and port configurations from $config_file."
     
-    echo -e "${Purple}Stopping HAProxy service...${NC}"
+    echo "Stopping HAProxy service..."
     sudo service haproxy stop
     
     if [ $? -eq 0 ]; then
-        echo -e "${Purple}HAProxy service stopped.${NC}"
+        echo "HAProxy service stopped."
     else
-        echo -e "${Purple}Failed to stop HAProxy service.${NC}"
+        echo "Failed to stop HAProxy service."
     fi
 
     echo "Done!"
 }
-
 remove_haproxy() {
     echo -e "${Purple}Removing HAProxy...${NC}"
     sudo apt-get remove --purge -y haproxy
