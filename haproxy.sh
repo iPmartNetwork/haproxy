@@ -17,6 +17,18 @@ Blue='\033[0;34m'         # Blue
 Purple='\033[0;35m'       # Purple
 Cyan='\033[0;36m'         # Cyan
 White='\033[0;37m'        # White
+
+echo "
+____________________________________________________________________________________
+
+SERVER_IP=$(hostname -I | awk '{print $1}')
+
+SERVER_COUNTRY=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.country')
+
+SERVER_ISP=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.isp')
+
+____________________________________________________________________________________                                                                                     
+"
 config_file="/etc/haproxy/haproxy.cfg"
 backup_file="/etc/haproxy/haproxy.cfg.bak"
 
