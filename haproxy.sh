@@ -166,7 +166,7 @@ check_root
 
 while true; do
     sleep 1.5
-    echo "Select an option:"
+    echo "${Cyan}Select an option:"
     echo "1. Install HAProxy"
     echo "2. Add IPs and Ports to Forward"
     echo "3. Clear Configurations"
