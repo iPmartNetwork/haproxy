@@ -110,171 +110,276 @@ ________________________________________________________________________________
 ____________________________________________________________________________________                                                                                     
 "
 
+    ## Functions for HA-Proxy setup
 install_haproxy() {
-    echo "Installing HAProxy..."
-    sudo apt-get update
-    sudo apt-get install -y haproxy
-    echo "HAProxy installed."
-    default_config
-}
+    if systemctl is-active --quiet haproxy; then
+        if ! (whiptail --title "Confirm Installation" --yesno "HAProxy service is already active. Do you want to reinstall?" 8 60); then
+            whiptail --title "Installation Cancelled" --msgbox "Installation cancelled. HAProxy service remains active." 8 60
+            return
+        fi
+    fi
 
-default_config() {
-    cat <<EOL > $config_file
-global
-    log /dev/log    local0
-    log /dev/log    local1 notice
-    chroot /var/lib/haproxy
-    stats socket /run/haproxy/admin.sock mode 660 level admin
-    stats timeout 30s
-    user haproxy
-    group haproxy
-    daemon
+    {
+        echo "10" "Installing HAProxy..."
+        sudo $PACKAGE_MANAGER install haproxy -y > /dev/null 2>&1
+        sleep 1
+        echo "30" "Downloading haproxy.cfg..."
+        wget -q -O /tmp/haproxy.cfg "https://raw.githubusercontent.com/iPmartNetwork/haproxy/main/haproxy.cfg" > /dev/null 2>&1
+        sleep 1
+        echo "50" "Removing existing haproxy.cfg..."
+        sudo rm /etc/haproxy/haproxy.cfg > /dev/null 2>&1
+        sleep 1
+        echo "70" "Moving new haproxy.cfg to /etc/haproxy..."
+        sudo mv /tmp/haproxy.cfg /etc/haproxy/haproxy.cfg
+        sleep 1
+    } | dialog --title "HAProxy Installation" --gauge "Installing HAProxy..." 10 60 0
 
-    # Default SSL material locations
-    ca-base /etc/ssl/certs
-    crt-base /etc/ssl/private
+    whiptail --title "HAProxy Installation" --msgbox "HAProxy installation completed." 8 60
 
-    # Default ciphers to use on SSL-enabled listening sockets.
-    # For more information, see ciphers(1SSL). This list is from:
-    #  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
-    ssl-default-bind-ciphers ECDH+AESGCM:ECDH+CHACHA20:ECDH+AES256:ECDH+AES128:ECDH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS
-    ssl-default-bind-options no-sslv3
-
-defaults
-    log     global
-    mode    tcp
-    option  tcplog
-    option  dontlognull
-    timeout connect 5000
-    timeout client  50000
-    timeout server  50000
-    errorfile 400 /etc/haproxy/errors/400.http
-    errorfile 403 /etc/haproxy/errors/403.http
-    errorfile 408 /etc/haproxy/errors/408.http
-    errorfile 500 /etc/haproxy/errors/500.http
-    errorfile 502 /etc/haproxy/errors/502.http
-    errorfile 503 /etc/haproxy/errors/503.http
-    errorfile 504 /etc/haproxy/errors/504.http
-EOL
-}
-
-generate_haproxy_config() {
-    local ports=($1)
-    local target_ips=($2)
-    local config_file="/etc/haproxy/haproxy.cfg"
-
-    echo "Generating HAProxy configuration..."
-
-    for port in "${ports[@]}"; do
-        cat <<EOL >> $config_file
-
-frontend frontend_$port
-    bind *:$port
-    default_backend backend_$port
-
-backend backend_$port
-EOL
-        for i in "${!target_ips[@]}"; do
-            if [ $i -eq 0 ]; then
-                cat <<EOL >> $config_file
-    server server$(($i+1)) ${target_ips[$i]}:$port check
-EOL
-            else
-                cat <<EOL >> $config_file
-    server server$(($i+1)) ${target_ips[$i]}:$port check backup
-EOL
-            fi
-        done
+    while true; do
+        target_iport=$(whiptail --inputbox "Enter Relay-Server Free Port (1-65535):" 8 60 --title "HAProxy Installation" 3>&1 1>&2 2>&3)
+        if [[ "$target_iport" =~ ^[0-9]+$ ]] && [ "$target_iport" -ge 1 ] && [ "$target_iport" -le 65535 ]; then
+            break
+        else
+            whiptail --title "Invalid Input" --msgbox "Please enter a valid numeric port between 1 and 65535." 8 60
+        fi
     done
 
-    echo "HAProxy configuration generated at $config_file"
-}
+    target_ip=$(whiptail --inputbox "Enter Main-Server IP:" 8 60 --title "HAProxy Installation" 3>&1 1>&2 2>&3)
 
-add_ip_ports() {
-    read -p "Enter the IPs to forward to (use comma , to separate multiple IPs): " user_ips
-    IFS=',' read -r -a ips_array <<< "$user_ips"
-    read -p "Enter the ports (use comma , to separate): " user_ports
-    IFS=',' read -r -a ports_array <<< "$user_ports"
-    generate_haproxy_config "${ports_array[*]}" "${ips_array[*]}"
+    while true; do
+        target_port=$(whiptail --inputbox "Enter Main-Server Port (1-65535):" 8 60 --title "HAProxy Installation" 3>&1 1>&2 2>&3)
+        if [[ "$target_port" =~ ^[0-9]+$ ]] && [ "$target_port" -ge 1 ] && [ "$target_port" -le 65535 ]; then
+            break
+        else
+            whiptail --title "Invalid Input" --msgbox "Please enter a valid numeric port between 1 and 65535." 8 60
+        fi
+    done
 
-    if haproxy -c -f /etc/haproxy/haproxy.cfg; then
-        echo "Restarting HAProxy service..."
-        service haproxy restart
-        echo "HAProxy configuration updated and service restarted."
+    if [[ -n "$target_ip" ]]; then
+        sudo sed -i "s/\$iport/$target_iport/g; s/\$IP/$target_ip/g; s/\$port/$target_port/g" /etc/haproxy/haproxy.cfg > /dev/null 2>&1
+        sudo systemctl restart haproxy > /dev/null 2>&1
+
+        status=$(sudo systemctl is-active haproxy)
+        if [ "$status" = "active" ]; then
+            whiptail --title "HAProxy Installation" --msgbox "HAProxy tunnel is installed and active." 8 60
+        else
+            whiptail --title "HAProxy Installation" --msgbox "HAProxy service is not active. Status: $status." 8 60
+        fi
     else
-        echo "HAProxy configuration is invalid. Please check the configuration file."
+        whiptail --title "HAProxy Installation" --msgbox "Invalid IP input. Please ensure the field is filled correctly." 8 60
     fi
 }
 
-clear_configs() {
-    echo "Creating a backup of the HAProxy configuration..."
-    cp $config_file $backup_file
+check_haproxy() {
+    haproxy_ports=$(sudo lsof -i -P -n -sTCP:LISTEN | grep haproxy | awk '{print $9}')
+    status=$(sudo systemctl is-active haproxy)
+    service_status="haproxy Service Status: $status"
+    info="Service Status and Ports in Use:\n\nPorts in use:\n$haproxy_ports\n\n$service_status"
+    whiptail --title "haproxy Service Status and Ports" --msgbox "$info" 15 70
+}
 
-    if [ $? -ne 0 ]; then
-        echo "Failed to create a backup. Aborting."
+add_frontend_backend() {
+
+    if ! systemctl is-active --quiet haproxy; then
+        whiptail --title "HAProxy Not Active" --msgbox "HAProxy service is not active.\nPlease start HAProxy before adding new configuration." 8 60
         return
     fi
 
-    echo "Clearing IP and port configurations from HAProxy configuration..."
+    while true; do
+        frontend_port=$(whiptail --inputbox "Enter Relay-Server Free Port (1-65535):" 8 60 --title "HAProxy Installation" 3>&1 1>&2 2>&3)
+        exit_status=$?
+        if [ $exit_status != 0 ]; then
+            whiptail --title "Cancelled" --msgbox "Operation cancelled. Returning to menu." 8 60
+            return
+        fi
+        
+        if [[ "$frontend_port" =~ ^[0-9]+$ ]] && [ "$frontend_port" -ge 1 ] && [ "$frontend_port" -le 65535 ]; then
+            if grep -q "frontend tunnel-$frontend_port" /etc/haproxy/haproxy.cfg; then
+                whiptail --title "Port Already Used" --msgbox "Port $frontend_port is already in use. Please choose another port." 8 60
+            else
+                break
+            fi
+        else
+            whiptail --title "Invalid Input" --msgbox "Please enter a valid numeric port between 1 and 65535." 8 60
+        fi
+    done
 
-    awk '
-    /^frontend frontend_/ {skip = 1}
-    /^backend backend_/ {skip = 1}
-    skip {if (/^$/) {skip = 0}; next}
-    {print}
-    ' $backup_file > $config_file
-
-    echo "Clearing IP and port configurations from $config_file."
-    
-    echo "Stopping HAProxy service..."
-    sudo service haproxy stop
-    
-    if [ $? -eq 0 ]; then
-        echo "HAProxy service stopped."
-    else
-        echo "Failed to stop HAProxy service."
+    backend_ip=$(whiptail --inputbox "Enter Main-Server IP:" 8 60 --title "Add Frontend/Backend" 3>&1 1>&2 2>&3)
+    exit_status=$?
+    if [ $exit_status != 0 ]; then
+        whiptail --title "Cancelled" --msgbox "Operation cancelled. Returning to menu." 8 60
+        return
     fi
 
-    echo "Done!"
-}
-remove_haproxy() {
-    echo -e "${Purple}Removing HAProxy...${NC}"
-    sudo apt-get remove --purge -y haproxy
-    sudo apt-get autoremove -y
-    echo -e "${Purple}HAProxy removed.${NC}"
-}
-
-check_root
-
-while true; do
-    sleep 1.5
-    echo -e "${Purple}Select an option:${NC}"
-    echo -e "${White}1. Install HAProxy${NC}"
-    echo -e "${Cyan}2. Add IPs and Ports to Forward${NC}"
-    echo -e "${White}3. Clear Configurations${NC}"
-    echo -e "${Cyan}4. Remove HAProxy Completely${NC}"
-    echo -e "${White}0. Exit${NC}"
-    read -p "Select a Number : " choice
-
-    case $choice in
-        1)
-            install_haproxy
-            ;;
-        2)
-            add_ip_ports
-            ;;
-        3)
-            clear_configs
-            ;;
-        4)
-            remove_haproxy
-            ;;
-        0)
-            echo "Exit..."
+    while true; do
+        backend_port=$(whiptail --inputbox "Enter Main-Server Port (1-65535):" 8 60 --title "HAProxy Installation" 3>&1 1>&2 2>&3)
+        exit_status=$?
+        if [ $exit_status != 0 ]; then
+            whiptail --title "Cancelled" --msgbox "Operation cancelled. Returning to menu." 8 60
+            return
+        fi
+        
+        if [[ "$backend_port" =~ ^[0-9]+$ ]] && [ "$backend_port" -ge 1 ] && [ "$backend_port" -le 65535 ]; then
             break
-            ;;
-        *)
-            echo "Invalid option. Please try again."
-            ;;
-    esac
-done
+        else
+            whiptail --title "Invalid Input" --msgbox "Please enter a valid numeric port between 1 and 65535." 8 60
+        fi
+    done
+
+    {
+        echo ""
+        echo "frontend tunnel-$frontend_port"
+        echo "    bind *:$frontend_port"
+        echo "    mode tcp"
+        echo "    default_backend tunnel-$backend_port"
+        echo ""
+        echo "backend tunnel-$backend_port"
+        echo "    mode tcp"
+        echo "    server target_server $backend_ip:$backend_port"
+    } | sudo tee -a /etc/haproxy/haproxy.cfg > /dev/null
+
+    sudo systemctl restart haproxy > /dev/null 2>&1
+
+    whiptail --title "Frontend/Backend Added" --msgbox "New frontend and backend added successfully.\n\nFrontend: tunnel-$frontend_port\nBackend: tunnel-$backend_port" 10 60
+}
+
+remove_frontend_backend() {
+    
+    frontends=$(grep -E '^frontend ' /etc/haproxy/haproxy.cfg | awk '{print $2}')
+    
+    
+    options=""
+    for frontend in $frontends; do
+        default_backend=$(grep -E "^frontend $frontend$" /etc/haproxy/haproxy.cfg -A 10 | grep 'default_backend' | awk '{print $2}')
+        options+="$frontend \"$default_backend\" "
+    done
+
+    
+    selected=$(whiptail --menu "Select Frontend to Remove" 20 60 10 $options 3>&1 1>&2 2>&3)
+
+    if [[ -n "$selected" ]]; then
+        frontend_name=$selected
+        backend_name=$(grep -E "^frontend $frontend_name$" /etc/haproxy/haproxy.cfg -A 10 | grep 'default_backend' | awk '{print $2}')
+
+        
+        if [[ -n "$backend_name" ]]; then
+            
+            sudo sed -i "/^frontend $frontend_name$/,/^$/d" /etc/haproxy/haproxy.cfg
+
+            
+            sudo sed -i "/^backend $backend_name$/,/^$/d" /etc/haproxy/haproxy.cfg
+
+            
+            sudo systemctl restart haproxy > /dev/null 2>&1
+
+            
+            whiptail --title "Frontend/Backend Removed" --msgbox "Frontend '$frontend_name' and Backend '$backend_name' removed successfully." 8 60
+        else
+            
+            whiptail --title "Error" --msgbox "Could not find the default backend for frontend '$frontend_name'." 8 60
+        fi
+    else
+        
+        whiptail --title "Cancelled" --msgbox "No frontend selected. Operation cancelled." 8 60
+    fi
+}
+
+uninstall_haproxy() {
+    if (whiptail --title "Confirm Uninstallation" --yesno "Are you sure you want to uninstall HAProxy?" 8 60); then
+        {
+            echo "20" "Stopping HAProxy service..."
+            sudo systemctl stop haproxy > /dev/null 2>&1
+            sleep 1
+            echo "40" "Disabling HAProxy service..."
+            sudo systemctl disable haproxy > /dev/null 2>&1
+            sleep 1
+            echo "60" "Removing HAProxy..."
+            sudo $PACKAGE_MANAGER remove haproxy -y > /dev/null 2>&1
+            sleep 1
+        } | dialog --title "HAProxy Uninstallation" --gauge "Uninstalling HAProxy..." 10 60 0
+
+        whiptail --title "HAProxy Uninstallation" --msgbox "HAProxy Uninstalled." 8 60
+        clear
+    else
+        whiptail --title "HAProxy Uninstallation" --msgbox "Uninstallation cancelled." 8 60
+        clear
+    fi
+}
+
+#################################
+# Graphical functionality for Socat menu
+haproxy_menu() {
+    while true; do
+        choice=$(whiptail --backtitle "iPmart Network" --title "HA-Proxy Menu" --menu "Please choose one of the following options:" 30 70 20 \
+        "Install" "Install HA-Proxy" \
+        "Status" "Check HA-Proxy Port and Status" \
+        "Add" "Add more tunnel Configuration" \
+        "Remove" "Remove tunnel Configuration" \
+        "Uninstall" "Uninstall HAProxy" \
+        "Back" "Back To Main Menu" 3>&1 1>&2 2>&3)
+
+        # Check the return value of the whiptail command
+        if [ $? -eq 0 ]; then
+            # Check if the user selected a valid option
+            case $choice in
+                Install)
+                    install_haproxy
+                    ;;
+                Status)
+                    check_haproxy
+                    ;;
+                Add)
+                    add_frontend_backend
+                    ;;
+                Remove)
+                    remove_frontend_backend
+                    ;;
+                Uninstall)
+                    uninstall_haproxy
+                    ;;
+                Back)
+                    menu
+                    ;;
+                *)
+                    whiptail --title "Invalid Option" --msgbox "Please select a valid option." 8 60
+                    exit 1
+                    ;;
+            esac
+        else
+            exit 1
+        fi
+    done
+}
+
+#################################
+# Define the main graphical menu
+function menu() {
+    while true; do
+        choice=$(whiptail --backtitle "Welcome to HA-Proxy Manage" --title "Choose Your Tunnel Mode" --menu "Please choose one of the following options:" 20 60 10 \
+        "HA-Proxy" "Manage HA-Proxy Tunnel" \
+        "Quit" "Exit From The Script" 3>&1 1>&2 2>&3)
+
+        # Check the return value of the whiptail command
+        if [ $? -eq 0 ]; then
+            # Check if the user selected a valid option
+            case $choice in
+                HA-Proxy)
+                    haproxy_menu
+                    ;;
+                Quit)
+                    exit 0
+                    ;;
+                *)
+                    whiptail --title "Invalid Option" --msgbox "Please select a valid option." 8 60
+                    exit 1
+                    ;;
+            esac
+        else
+            exit 1
+        fi
+    done
+}
+
+# Call the menu function
+menu
