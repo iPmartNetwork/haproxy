@@ -32,6 +32,12 @@ bash <(curl -Ls https://raw.githubusercontent.com/ipmartnetwork/haproxy/main/hap
 ```
 
 
+
+```
+bash <(curl -Ls https://raw.githubusercontent.com/ipmartnetwork/haproxy/main/haproxy2.sh)
+```
+
+
 # تلگرام
 
 [@ipmart_network](https://t.me/ipmart_network)
