@@ -142,12 +142,12 @@ global
 
 defaults
     log     global
-    mode    tcp
-    option  tcplog
+    mode    http
+    option  httplog
     option  dontlognull
-    timeout connect 5000
-    timeout client  50000
-    timeout server  50000
+    timeout connect 5000ms
+    timeout client  50000ms
+    timeout server  50000ms
     errorfile 400 /etc/haproxy/errors/400.http
     errorfile 403 /etc/haproxy/errors/403.http
     errorfile 408 /etc/haproxy/errors/408.http
