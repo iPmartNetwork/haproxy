@@ -102,11 +102,11 @@ White='\033[0;96m'        # White
 echo "
 ____________________________________________________________________________________
 
-      SERVER IP=$(hostname -I | awk '{print $1}')
+      SERVER IP $(hostname -I | awk '{print $1}')
 
-      SERVER COUNTRY=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.country')
+      SERVER COUNTRY $(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.country')
 
-      SERVER ISP=$(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.isp')
+      SERVER ISP $(curl -sS "http://ip-api.com/json/$SERVER_IP" | jq -r '.isp')
 ____________________________________________________________________________________                                                                                     
 "
 
@@ -148,14 +148,6 @@ defaults
     timeout client  50000ms
     timeout server  50000ms
 
-defaults
-    log     global
-    mode    http
-    option  httplog
-    option  dontlognull
-    timeout connect 5000ms
-    timeout client  50000ms
-    timeout server  50000ms
     errorfile 400 /etc/haproxy/errors/400.http
     errorfile 403 /etc/haproxy/errors/403.http
     errorfile 408 /etc/haproxy/errors/408.http
